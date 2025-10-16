@@ -13483,7 +13483,7 @@ GameObject:
   - component: {fileID: 8264618155622285463}
   - component: {fileID: 2617152925769767661}
   m_Layer: 0
-  m_Name: Mremireh O Desbiens
+  m_Name: Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
