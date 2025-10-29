@@ -11,6 +11,7 @@ public class Bala : MonoBehaviour
     private UnityEvent<Transform> onHitEnemy;
 
     private RigidBody rigidbody;
+
     private void Awake()
     {
         rigidbody = GetComponent<RigidBody>();
@@ -37,8 +38,8 @@ public class Bala : MonoBehaviour
     }
           private void OnDisable()
     {
-        GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-        GetComponent<Rigidbody>().angularVelocity = Vector3.zero;
+        rigidbody.linearVelocity = Vector3.zero;
+        rigidbody.angularVelocity = Vector3.zero;
     }
 
 }
