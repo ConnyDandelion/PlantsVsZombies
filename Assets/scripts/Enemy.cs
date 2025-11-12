@@ -1,82 +1,86 @@
 using UnityEngine;
 using System.Collections;
-
+using UnityEngine.Events;
 public class Enemy : MonoBehaviour
 {
     [SerializeField]
-
     private EnemyData enemyData;
-
     [SerializeField]
-
     private Health health;
     [SerializeField]
-
     private Animator animator;
     [SerializeField]
-
     private LayerMask enemiesLayer;
     [SerializeField]
-
     private float raycastOffset = 2f;
+    [SerializeField]
+    private UnityEvent<Transform> onAttackTarget;
     private bool isAttacking = false;
-
     private Coroutine attackCoroutine;
-
     private Health targetHealth;
-
+    private Collider collider;
+    private void Awake()
+    {
+        collider = GetComponent<Collider>();
+    }
     private void OnEnable()
-{
-        health.InitializeHealth(enemyData.health);
+    {
+        health.InitializeHealth(enemyData.maxHealth);
         StartLooking();
-    
+        //SoundManager.instance.Play(enemyData.GetSoundName(ActionKey.Appear));
     }
     private void StartLooking()
     {
         isAttacking = false;
-        animator.Play(enemyData.walkAnimation);
-
+        animator.Play(enemyData.GetAnimationName(ActionKey.Walk));
     }
-
     private void Update()
     {
-        if (isAttacking)
+        if (!isAttacking && health.CurrentHealth > 0)
         {
             transform.Translate(Vector3.left * enemyData.speed * Time.deltaTime);
             Vector3 forward = transform.TransformDirection(Vector3.left);
-
-            if (Physics.Raycast(transform.position, forward, out RaycastHit hit, enemyData.attackRange, enemiesLayer))
+            Vector3 rayOrigin = transform.position + Vector3.up * raycastOffset;
+            if (Physics.Raycast(rayOrigin, forward, out RaycastHit hit, enemyData.attackRange, enemiesLayer))
             {
                 isAttacking = true;
                 targetHealth = hit.collider.GetComponent<Health>();
                 attackCoroutine = StartCoroutine(Attack());
-
             }
+            Debug.DrawRay(rayOrigin, forward * enemyData.attackRange, Color.red);
         }
     }
     private IEnumerator Attack()
     {
         while (targetHealth.CurrentHealth > 0)
         {
-            animator.Play(enemyData.attackAnimation);
-            yield return new WaitForSeconds(2f);
+            SoundManager.instance.Play(enemyData.GetSoundName(ActionKey.Attack));
+            animator.Play(enemyData.GetAnimationName(ActionKey.Attack), 0,0f);
+            yield return new WaitForSeconds(enemyData.attackDuration);
+            onAttackTarget?.Invoke(targetHealth.transform);
+            SoundManager.instance.Play(enemyData.GetSoundName(ActionKey.Hit));
             targetHealth.TakeDamage(enemyData.damage);
-            yield return new WaitForSeconds(2f);
-
+            yield return new WaitForSeconds(enemyData.timeBetweenAttacks);
         }
+        attackCoroutine = null;
+        StartLooking();
     }
-        public void onDie()
+    public void Die()
+    {
+        collider.enabled = false;
+        SoundManager.instance.Play(enemyData.GetSoundName(ActionKey.Die));
+        StartCoroutine(DieRoutine());
+    }
+    private IEnumerator DieRoutine()
     {
         if (attackCoroutine != null)
         {
             StopCoroutine(attackCoroutine);
-            Destroy(gameObject, 1f);
         }
+        animator.Play(enemyData.GetAnimationName(ActionKey.Die));
+        yield return new WaitForSeconds(animator.GetCurrentAnimatorStateInfo(0).length);
+        gameObject.SetActive(false);
     }
-    
-
-        
-    
-        
-    
 }
+   
+
